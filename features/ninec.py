@@ -304,3 +304,33 @@ def NAACs(filename, weekstart_raw,forecast,sheet1,sheet2,cycle_dsi,cycle_meal,cy
             # Save the file
             writer.save()
             
+def AVANTI(filename,sheet, dsi,quantity, day, output_filename): 
+
+    data[day] = data[day].fillna(method="pad")
+    df = data.iloc[[i for i in range(len(data)) if 'DSI' in str(data[dsi].iloc[i])]]
+    df = df[[ dsi,day,quantity]]
+    df[dsi] = df[dsi].str.replace(" ","")
+    df[quantity] =  df[quantity].astype(int)
+    df.columns = ['DSI codes', 'day', 'Quantity']
+    
+    def Consolidate(Batch): 
+        consolidate = Batch.groupby('DSI codes').sum()
+        consolidate['DSI codes'] = consolidate.index
+        return consolidate[['DSI codes', 'Quantity']].reset_index(drop = True)
+
+    weekly_consolidate = consolidate(df[['DSI codes', 'Quantity']])
+    pickle_in = open(r"./database/database.pickle", "rb")
+    database = pickle.load(pickle_in)
+    weekly_tk = trial_kit(database, weekly_consolidate)
+
+    with pd.ExcelWriter(output_filename, engine='openpyxl') as writer:
+
+        weekly_tk.to_excel(writer, 'week trial kit', index = False)
+
+        for day_index in df['day'].unique(): 
+            day_df = Consolidate(df[[dsi, quantity]][df['day'] == day_index])
+            day_tk = trial_kit(database, day_df)
+            day_tk.to_excel(writer, day_index, index = False)
+
+        # Save the file
+        writer.save()
