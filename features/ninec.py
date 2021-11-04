@@ -8,6 +8,60 @@ import string
 import time
 import datetime
 
+def BOM_to_csv(data_root): 
+    print('start parsing....')
+    data = {
+        'BOM code': [],
+        'Stock Code': [], 
+        'BOM description': [], 
+        'Stock description': [], 
+        'Sequence': [], 
+        'Quantity': [], 
+        'Unit of Measure': [], 
+        'Scrap Percentage': [], 
+        'Fixed Quantity': []
+    }
+
+    xml_data = open(data_root, 'r').read()  # data root was BOM.xlsx 
+    root = ET.XML(xml_data)  # Parse XML
+    records = root.findall('./BOMRecord')
+    for record in records: 
+        parent_code = record.find('./Reference').text
+        parent_description = record.find('./Description').text
+        components = record.findall('./BuildPackage/ComponentLine')
+        for component in components: 
+            child_code = component.find('./StockItemCode').text 
+            child_unit = component.find('./UnitOfMeasure').text
+            child_description = component.find('./Description').text
+            child_quantity = float(component.find('./Quantity').text)
+            scrap_percentage = component.find('./ScrapPercentage').text
+            sequence_number = component.find('./SequenceNumber').text
+            fixed_quantity = component.find('./FixedQuantity').text
+
+            if child_unit == 'gm': 
+                child_quantity /= 1000
+                child_unit = 'Kg'
+
+            if child_unit == 'ml': 
+                child_quantity /= 1000
+                child_unit = 'Ltr'
+            
+            data['BOM code'].append(parent_code)
+            data['Stock Code'].append(child_code)
+            data['BOM description'].append(parent_description)
+            data['Stock description'].append(child_description)
+            data['Sequence'].append(sequence_number)
+            data['Quantity'].append(child_quantity)
+            data['Unit of Measure'].append(child_unit)
+            data['Scrap Percentage'].append(scrap_percentage)
+            data['Fixed Quantity'].append(fixed_quantity)
+
+    df = pd.DataFrame(data)
+    df.to_csv('./results/BOM.csv', index = False)
+    print('finished parsing')
+
+
+
 def initialise_BOM(data_root):
     print('intialising.....')
     # initialise dataset 
