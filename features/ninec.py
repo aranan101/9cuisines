@@ -304,7 +304,8 @@ def NAACs(filename, weekstart_raw,forecast,sheet1,sheet2,cycle_dsi,cycle_meal,cy
             # Save the file
             writer.save()
             
-def AVANTI(filename,sheet, dsi,quantity, day, output_filename): 
+def AVANTI(filename,sheet, dsi,quantity, day): 
+    output_filename = './results/AVANTI stock orders ' + str(int(time.time())) +'.xlsx'
     data = pd.read_excel(filename, sheet_name = sheet)
     data.columns = [i for i in range(len(data.columns))]
     data[day] = data[day].fillna(method="pad")
